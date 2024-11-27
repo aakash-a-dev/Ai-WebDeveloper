@@ -48,41 +48,55 @@ app.post("/template", async(req, res) => {
         return;
 })
 
-async function main() {
-    // Detailed messages including user-provided instructions and file details
-    const messages = [
-        {
-            role: 'user' as const,
-            content: ''
-        },
-        {
-            role: 'user' as const,
-            content: `Build the app as a single-page React application. 
-- Include a dynamic todo list with add, edit, and delete functionality.
-- Use React hooks (e.g., useState, useEffect) for state management.
-- Showcase responsiveness and good UX/UI design using Tailwind CSS classes.
-- Integrate placeholder icons from Lucide React for each action.
-- Provide Unsplash image links as placeholders for background or section designs.`
-        },
-        {
-            role: 'user' as const,
-            content: `Ensure the app adheres to the provided project structure and standards:
-- Use the existing \`eslint.config.js\` and \`tailwind.config.js\`.
-- Do not add unnecessary dependencies.
-- Use placeholder images from Unsplash for aesthetic purposes but do not download them.`
-        }
-    ];
 
-    // Call the Anthropic API with the messages
-    await anthropic.messages.stream({
-        messages: messages,
+app.post("/chat", async(req, res) => {
+    const message = req.body.message;
+
+    const response = await anthropic.messages.create({
+        messages: [{role: 'user', content: message}],
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192,
-        system: "Just give me single word answer about the project whether it is a frontend project or backend project, if frontend return single word answer react, if backend return single word answer node. No need to give any other response or answer I strictly want only one answer"
-    }).on('text', (text) => {
-        console.log(text);
-    });
-}
+        max_tokens: 1024,
+        system: getSystemPrompt()
+    })
+     console.log(response)
+     res.json({});
+})
+
+// async function main() {
+//     // Detailed messages including user-provided instructions and file details
+//     const messages = [
+//         {
+//             role: 'user' as const,
+//             content: ''
+//         },
+//         {
+//             role: 'user' as const,
+//             content: `Build the app as a single-page React application. 
+// - Include a dynamic todo list with add, edit, and delete functionality.
+// - Use React hooks (e.g., useState, useEffect) for state management.
+// - Showcase responsiveness and good UX/UI design using Tailwind CSS classes.
+// - Integrate placeholder icons from Lucide React for each action.
+// - Provide Unsplash image links as placeholders for background or section designs.`
+//         },
+//         {
+//             role: 'user' as const,
+//             content: `Ensure the app adheres to the provided project structure and standards:
+// - Use the existing \`eslint.config.js\` and \`tailwind.config.js\`.
+// - Do not add unnecessary dependencies.
+// - Use placeholder images from Unsplash for aesthetic purposes but do not download them.`
+//         }
+//     ];
+
+//     // Call the Anthropic API with the messages
+//     await anthropic.messages.stream({
+//         messages: messages,
+//         model: 'claude-3-5-sonnet-20241022',
+//         max_tokens: 8192,
+//         system: "Just give me single word answer about the project whether it is a frontend project or backend project, if frontend return single word answer react, if backend return single word answer node. No need to give any other response or answer I strictly want only one answer"
+//     }).on('text', (text) => {
+//         console.log(text);
+//     });
+// }
 
 // main();
 
