@@ -1,38 +1,57 @@
 require('dotenv').config();
+
+import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
-import { getSystemPrompt } from "./prompts";
+import { BASE_PROMPT, getSystemPrompt } from "./prompts";
+import { TextBlock } from "@anthropic-ai/sdk/resources";
+import { basePrompt as reactBasePrompt } from "./defaults/react";
+import { basePrompt as nodeBasePrompt } from "./defaults/node";
 
 const anthropic = new Anthropic();
+const app = express();
+app.use(express.json());
+
+app.post("/template", async(req, res) => {
+    const prompt = req.body.prompt;
+
+    const response = await anthropic.messages.create({
+        messages: [{role: 'user', content: prompt}],
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1024,
+        system: "Just give me single word answer about the project whether it is a frontend project or backend project, if frontend return single word answer react, if backend return single word answer node. No need to give any other response or answer I strictly want only one answer"
+    })
+
+    const answer = (response.content[0] as TextBlock).text; 
+
+    // if (answer != "react" && answer != "node"){
+    //     res.status(403).json({message: "You can't access this"});
+    //     return;
+    // }
+
+    if(answer == "react"){
+        res.json({
+            prompts: [BASE_PROMPT, reactBasePrompt]
+        })
+        return
+    }
+
+    if(answer == "node"){
+        res.json({
+            prompts: [nodeBasePrompt]
+        })
+        return
+    }
+
+            res.status(403).json({message: "You can't access this"});
+        return;
+})
 
 async function main() {
     // Detailed messages including user-provided instructions and file details
     const messages = [
         {
             role: 'user' as const,
-            content: `# Project Files
-
-The following is a list of all project files and their complete contents that are currently visible and accessible:
-
-1. **eslint.config.js**: ESlint configuration using TypeScript, React hooks, and React refresh plugins.
-2. **index.html**: HTML entry point with a root div and script inclusion for main.tsx.
-3. **package.json**: Includes Vite, React, TypeScript, Tailwind CSS, and Lucide React dependencies.
-4. **src** directory with components like App.tsx, main.tsx, and styles (index.css).
-5. Tailwind CSS setup in \`tailwind.config.js\`.
-
-Other configuration files: \`tsconfig.json\`, \`tsconfig.app.json\`, and \`vite.config.ts\`.
-
-For all designs, ensure:
-- Beautiful, production-ready pages.
-- JSX syntax with Tailwind CSS and React hooks.
-- Lucide React for icons.
-- Stock photos from Unsplash using valid URLs.
-
-### Objective:
-Create a "Todo App" with:
-1. Responsive and beautiful UI using Tailwind CSS.
-2. Icons from Lucide React.
-3. Sample data and Unsplash placeholders.
-4. Production-ready code.`
+            content: ''
         },
         {
             role: 'user' as const,
@@ -57,10 +76,15 @@ Create a "Todo App" with:
         messages: messages,
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 8192,
-        system: getSystemPrompt()
+        system: "Just give me single word answer about the project whether it is a frontend project or backend project, if frontend return single word answer react, if backend return single word answer node. No need to give any other response or answer I strictly want only one answer"
     }).on('text', (text) => {
         console.log(text);
     });
 }
 
-main();
+// main();
+
+
+app.listen(3000, ()=> {
+    console.log(`listening, at http://localhost:3000`)
+})
